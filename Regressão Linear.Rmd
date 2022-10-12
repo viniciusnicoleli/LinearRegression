@@ -1,0 +1,364 @@
+---
+title: "Projeto Integrador"
+author: "Felipe A. & Vinícius N."
+date: "21/11/2021"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+# Introdução
+
+A motivação para o seguinte trabalho constitui-se de poder analisar e ter o primeiro contato com a área de análise de dados, aperfeiçoar habilidades com estatística descritiva e programação voltada para Data Science. Para tanto, nós pegamos uma base do site Kaggle, com informações sobre a pontuação em testes com mil alunos. Ao longo do trabalho, nós tentaremos responder as seguintes perguntas divididas em dois grupos:
+
+
+Grupo A:
+
+* Que tipos de características mais impactam a pontuação geral?
+* Podemos, de alguma forma, prever essa pontuação com base nas informações prévias?
+
+Grupo B:
+
+* A relação da nota de um aluno em Escrita, tem a ver com a nota que ele obteve em Leitura e seu gênero?
+* A relação da nota de um aluno em Matemática, tem a ver com a nota que ele obteve com a Escrita e seu gênero?
+
+Dessa forma ao longo do trabalho, vamos poder definir porque a base de dados não nos ajuda a explicar as perguntas do Grupo B
+
+Além disso, o presente trabalho tem como foco o aprendizado de uma forma nova de pensar, embasado na criação de hipóteses, o teste das mesmas, e na procura de conhecer a fundo o problema disposto.
+
+\pagebreak
+
+# Material e métodos
+
+## Coleta de dados: 
+
+A base obtida apresenta informações de nota de mil alunos em diversas matérias, gênero e até mesmo qual foi o tipo de alimentação que os estudantes tiveram durante o período que foi registrado. Esta base foi obtida através do site [Kaggle]( https://www.kaggle.com/), podemos imaginar que o intuito da construção dessa base de dados, foi analisar diversas variáveis que possam contribuir para o desempenho de um indivíduo que está cursando a escola.
+
+```{r}
+library(knitr)
+getwd()
+df<-read.csv('StudentsPerformance.csv')
+
+kable(head(df,6)) # Criando uma tabela com as primeiras informações
+```
+
+### Variáveis contidas na base de dados.
+
+```{r, echo = FALSE}
+colnames(df)
+```
+
+Nossa base de dados está dividida em 8 variáveis, que são:
+
+1. Gênero
+2. Etnia
+3. Nível de educação dos pais
+4. Almoço
+5. Preparação para o teste
+6. Pontuação em matemática
+7. Pontuação em leitura
+8. Pontuação em escrita
+
+As variáveis Gênero, Etnia, Nível de educação dos pais, Almoço e preparação para o teste, são variáveis qualitativas, já as variáveis que contemplam a pontuação dos estudantes nas matérias, são variáveis quantitativas.
+
+```{r}
+str(df)
+```
+
+Inicialmente não realizamos nenhum tipo de alteação na base de dados, a mesma já não apresentava divergências necessárias que precisavamos corrigir em seu corpo. A decisão mantida, foi de permanecer com a base de dados do jeito que obtivemos ela para iniciar com as análises.
+
+Porém, agregamos uma nova variável, a variável de média das notas obitdas pelos alunos, para podermos modelar conforme esta variável, as desvantagens podem ser a perda de visualização do "Big picture" porém, nos vai permitir visualizar a modelagem completa das notas, visualizando suas interferências.
+
+```{r}
+length(df)
+dim(df)
+```
+
+Nós contamos com 1000 observaçoes para realizarmos as análises propostas e buscar as respostas para as questões levantadas.
+
+## Modelagem estatística:
+
+Para a conclusão do trabalho, usaremos diversas técnicas/análises aprendidas ao longo desses dois anos de curso, entre elas:
+
+* Técnicas exploratórias/Análise descritiva
+
+Nosso objetivo durante essa fase é desenvolver uma análise descritiva e exploratória, em busca de visualizarmos melhor as variáveis apresentadas realizando uma análise inicial. 
+
+Durante esse ponto buscamos:
+
+Avaliar as variáveis e possíveis mudanças na base de dados.
+Possíveis mudanças em variáveis quantitativas ou acrescentar novas variáveis com base nas já desenvolvidas.
+
+
+* Técnicas/Análises prescritivas
+
+Nosso objetivo durante essa fase do processo é avaliar e analisar os resultados obtidos com as inferências realizadas.
+
+O estudo nesse ponto é necessário para tomarmos medidas e compreender como estão funcionando os dados desenvolvidos e recomendar novas medidas.
+
+
+* Se possível Técnicas/Análises diagnósticas
+
+Nosso objetivo durante essa fase das análises e verificar a exatidão de 4 fatores:
+  Ajuste do modelo
+  Variabilidade dos resíduos
+  A normalidade dos dados
+  E possíveis observações que tenham poder de alavancagem
+  
+Se necessário for, avaliar o impacto da exclusão de alguns dados que possam afetar o ajuste dos dados, pois se violar qualquer um dos pontos acima, podemos ter um modelo que não se ajusta corretamente e precisamos fazer modificações ideiais para corrigir os problemas que sejam apontados acima. 
+
+\pagebreak
+
+# Resultados e discussões
+
+## Análise exploratória:
+
+```{r, warning=FALSE, message=FALSE}
+library(tidyverse)
+
+df%>%
+  str() # Dando uma olhada mais a fundo na estrutura dos nossos dados
+
+df%>%
+  summary()%>%kable() # Um sumário dos nossos dados 
+
+```
+
+### Gráficos
+
+Uma parte importante de qualquer análise, é a criação de gráficos, para melhor análise. 
+
+O motivo de plotarmos os gráficos e entender como exatamente a variável se comporta em relação à outras, com base nessa visualização podemos tomar decisões importes para como vamos construir o modelo.
+
+Com essas plotagens podemos evitar erros que futuramente e que necessitem de Análises de resíduos para configurar corretamente.
+
+```{r, warning=FALSE, message=FALSE, echo = FALSE}
+
+ggplot(data=df, aes(x=gender, fill = gender)) + 
+  geom_bar() + 
+  ggtitle("Abertura de quantidade de alunos por sexo") + 
+  theme(legend.position = "bottom",
+        legend.text = element_text(size=5),
+        legend.title = element_text(size=10),
+        axis.text=element_text(size=7)) + ylab("Frequência")
+
+
+ggplot(df, aes(x=race.ethnicity, fill=race.ethnicity)) +
+  geom_bar() + ggtitle("Abertura por etinia") + ylab("Frequência")
+
+
+
+ggplot(df, aes(x=parental.level.of.education)) +
+  geom_bar() + ggtitle("Abertura do nível de educação dos pais") + ylab("Frequência")
+
+ggplot(df, aes(x=lunch)) +
+  geom_bar() + ggtitle("Abertura de o que teve no almoço") + ylab("Frequência")
+
+ggplot(df, aes(x=test.preparation.course)) +
+  geom_bar() + ggtitle("Se fez curso preparatório") + ylab("Frequência")
+
+ggplot(df, aes(x=math.score, fill = math.score)) +
+  geom_bar() + ggtitle("Abertura da pontuação em matemática") + ylab("Frequência") + 
+  theme(legend.position = "bottom")
+
+ggplot(df, aes(x=reading.score, fill = reading.score)) +
+  geom_bar() + ggtitle("Abertura da pontuação em leitura") + ylab("Frequência") + 
+  theme(legend.position = "bottom")
+
+ggplot(df, aes(x=writing.score, fill = writing.score)) +
+  geom_bar() + ggtitle("Abertura da pontuação em escrita") + ylab("Frequência") + 
+  theme(legend.position = "bottom")
+
+```
+
+Dado o objetivo em questão (entender quais variáveis impactam na pontuação média dos testes), vamos criar uma variável com essa pontuação média e alguns gráficos mais detalhados, para entender a relação entre as variáveis e essa nova variável.
+
+```{r, warning=FALSE, message=FALSE, echo = FALSE}
+
+df$mean.score <- (df$math.score + df$reading.score + df$writing.score)/3
+
+ggplot(df, aes(x = gender, y = mean.score)) + geom_boxplot() + ggtitle("Boxplot do género com a pontuação média") + theme(title = element_text(size=7))
+
+
+ggplot(df, aes(x = race.ethnicity, y = mean.score)) + geom_boxplot() + ggtitle("Boxplot da etnia com a pontuação média")+ theme(title = element_text(size=7))
+
+
+ggplot(df, aes(x = parental.level.of.education, y = mean.score)) + geom_boxplot() + ggtitle("Boxplot do nível de educação dos pais com a pontuação média") + theme(title = element_text(size=7), axis.text.x = element_text(size = 7))
+
+
+ggplot(df, aes(x = lunch, y = mean.score)) + geom_boxplot() + ggtitle("Boxplot de o que a pessoa teve de almoço com a pontuação média") + theme(title = element_text(size=7), axis.text.x = element_text(size = 7))
+
+
+
+ggplot(df, aes(x = test.preparation.course, y = mean.score)) + geom_boxplot() + ggtitle("Boxplot do curso de preparação com a pontuação média") + theme(title = element_text(size=7), axis.text.x = element_text(size = 7))
+
+
+```
+
+
+## Ajuste do modelo
+
+Vamos criar um modelo inicial, e como primeira versão, vamos adicionar todas as covariáveis ao mesmo.
+
+A estratégia principal, é ver o impacto que podemos ter com todas as variáveis trabalhando em conjunto, caso seja necessário algum tipo de ajuste, vamos verificar através dos gráficos de falta de ajuste, variabilidade, normalidade e potencial de observações ter alavancamento na reta.
+
+```{r, warning=FALSE, message=FALSE, echo = FALSE }
+
+fit_1 <- lm(mean.score ~ gender + race.ethnicity + parental.level.of.education + 
+              test.preparation.course + lunch, data= df)
+
+fit_1%>%summary()
+```
+
+Pudemos ver que nossas covaríaveis foram estatísticamente significantes para explicar a resposta. No entanto, algo que podemos perceber, que o modelo explica pouca variabilidade da resposta, apenas 24%. 
+
+Vejamos os gráficos do modelo:
+
+```{r, warning=FALSE, message=FALSE, echo = FALSE }
+par(mfrow=c(2,2))
+plot(fit_1)
+```
+
+Com os gráficos obtidos podemos notar que não necessitamos de ajustes no modelo construído, isso prova que a estratégia adotada para a construção do modelo de regressão foi bem definida por essa razão nós não necessitamos de nenhum tipo de ajuste com a base de dados, ou transformações nas variáveis para readequar melhor o modelo.
+
+```{r}
+plot(cooks.distance(fit_1))
+
+```
+
+Já com o modelo bem definido e sem problemas de qualquer tipo, avaliamos os valores de cooks e podemos observar que não possuímos valores que sejam necessários a intervenção de algum tipo de investigação. Pois as influências das observações parecem ser bem homogêneas.
+
+Poderíamos ter um problema grande com as observações se possuíssimos alta alavancagem juntamente com um alto resíduo, isso nos iria garantir certamente problemas de ajuste que posteriormente deveríamos resolver com tratamentos específicos, o que não vem ao caso em nosso modelo.
+
+
+```{r}
+library(car)
+library(MASS)
+qqPlot(fit_1)
+
+```
+
+Através da biblioteca Car, podemos plotar o gráfico qqPlot que nos apresenta isoladamente o gráfico que investiga a nornmalidade mais a fundo e é possível notar a fuga da normalidade bem nos pontos extremos, destacando para o ponto mais extremo positivo, podemos avaliar que não existe um impacto tão significativo para a necessidade de reajuste do modelo.
+
+```{r}
+x<-covratio(fit_1)
+length(x[(1.05> x) & (x >1.00)])
+length(x[x>1.05])
+```
+
+Através da função covratio, podemos observar também as variâncias totais de cada observação das 1000 que temos disponíveis na base de dados, a importância é que uma variância acima de 1 leva a crer que a mesma deve apresentar resíduos grandes, o que pode ser preocupante. Para avaliarmos esse impacto, foi plotado a contagem de quantas observações possuímos em dois intervalos. Tivemos 831 contagens de valores que estão entre 1.05 e 1.03 e nenhum valor acima de 1.05.
+
+Infelizmente não é possível a utilização da função p.adjust para o modelo que foi selecionado, a razão é por sintaxe da função. Porém é fácil observar através dos boxplots já plotados anteriormente que não possuímos nenhum tipo de outlier significativo.
+
+
+
+
+##Testando modelos diferentes, avaliando o impacto das variáveis.
+
+```{r}
+
+
+fit_3 <- lm(mean.score ~ gender + race.ethnicity + parental.level.of.education + 
+              test.preparation.course, data= df)
+
+summary(fit_3)
+
+fit_4 <- lm(mean.score ~ gender + race.ethnicity + parental.level.of.education + 
+               + lunch, data= df)
+
+summary(fit_4)
+
+fit_5 <- lm(mean.score ~ gender + race.ethnicity + test.preparation.course + lunch, data= df)
+
+summary(fit_5)
+
+fit_6 <- lm(mean.score ~ gender + parental.level.of.education + 
+              test.preparation.course + lunch, data= df)
+
+summary(fit_6)
+
+fit_7 <-  lm(mean.score ~ race.ethnicity + parental.level.of.education + 
+              test.preparation.course, data= df)
+
+summary(fit_7)
+
+```
+
+O objetivo desse teste é visualizarmos qual o impacto que cada variável tem dentro do modelo escolhido estratégicamente.
+
+Podemos notar que as variáveis que menos garantem impacto no modelo são:
+-Race.ethnicity
+-Parental.level.of.education
+
+Instintivamente podemos notar que são variáveis que com certeza possuem algum tipo de influência nas notas que são obtidas pelos alunos. 
+
+Segundo Tania Regina da Silva, graduada em Pedagogia em 1996 pela UFPR, o incentivo dos pais é fundamental para o desenvolvimento de um estudante em uma escola e o grau de escolaridade dos pais é importantíssimo para eventualmente incentivar os filhos a se desenvolver mais, o que o resultado obtido se torna uma contradição.
+
+
+Isso nos incentivou a buscar mais respostas com outros modelos, dessa vez desvinculando a variável "mean.score" e buscando respostas com base nas variáveis das notas isoladas dos alunos, math score, reading score e writing score. Ocasionando então na evolução do grupo B de questionamentos:
+
+* A relação da nota de um aluno em Escrita, tem a ver com a nota que ele obteve em Leitura e seu gênero?
+* A relação da nota de um aluno em Matemática, tem a ver com a nota que ele obteve com a Escrita e seu gênero?
+
+```{r}
+fit_read <- lm(reading.score ~ writing.score  + race.ethnicity, data= df)
+
+summary(fit_read)
+
+#Plotando os gráficos de pressupostos
+par(mfrow=c(2,2))
+plot(fit_read)
+
+library("car")
+#-----------------------------------
+
+#Verificando a integridade do Modelo.
+
+#Plotando o a normalidade do modelo.
+qqPlot(fit_read)
+       
+#Plotando o ajuste do modelo       
+residualPlot(fit_read)
+
+#Plotando as observações mais influentes avaliando valor DFfits.
+
+x<-influence.measures(fit_read)
+
+summary(x)
+
+plot(cooks.distance(fit_read))
+```
+
+Inicialmente já podemos notar a diferença de explicação do modelo, esse modelo possui um nível de explicação de mais de 90%. O que nos faz acreditar que a nota de um aluno em Leitura, é explicado pela nota que obteve em escrita. Porém, a Etnia não é bem explicativa nesse modelo, apenas apresentando que a etnia D é mais significativa.
+
+Podemos notar também a integridade do modelo, variância, ajuste bem definida, assim como através da função qqPlot, podemos notar a normalização do modelo.
+
+```{r}
+fit_math <- lm(math.score ~ writing.score  + race.ethnicity, data= df)
+
+summary(fit_math)
+
+par(mfrow=c(2, 2))
+plot(fit_math)
+
+qqPlot(fit_math)
+
+residualPlot(fit_math)
+
+y<-influence.measures(fit_math)
+
+summary(y)
+
+plot(cooks.distance(fit_math))
+
+```
+
+Com uma taxa de explicação de 66% do modelo, podemos ver que a explicação drásticamente cai. Um aluno que possui habilidades em humanas, pode ter uma disposição a não performar tão bem em uma matéria de exatas. Não podemos ignorar a variável de identidade de raça, onde a raça étnica E, tem uma maior explicação nas notas de matemática.
+
+
+\newpage
+
+## Conclusão
+
+Com os resultados obtidos através de toda a análise desenvolvida, podemos concluir que os objetivos destacados primordialmente durante as fases iniciais, os resultados que obtivemos é que o modelo escolhido através da estratégia inicial atendeu os requisitos necessários para as análises, porém não foi explicativo o suficiente para prever porque se deve as distribuições das notas obtidas pelos alunos. Modelos diferentes foram testados para tentar atingir uma maior taxa de explicação, mas nada chegou tão próximo do modelo descrito no presente trabalho. O que nos traz a hipótese de que apenas essas variáveis não são o suficiente para definirmos a explicação do que realmente afeta as notas dos alunos, por isso é necessário inclusão de novas pesquisas que possam explicar com maior exatidão qual é a distribuição e o que realmente influencia nessas pontuações, por isso as variáveis que visualmente mais impactam não tem um sentido correto de explicação, pois o impacto não são tão consideráveis.
